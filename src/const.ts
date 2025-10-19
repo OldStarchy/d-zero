@@ -19,3 +19,12 @@ export const PAGES = {
 		url: '/encounter',
 	},
 } as const satisfies Record<string, PageInfo>;
+
+export const DEFINITIONS = {
+	ARMOR_CLASS_DESCRIPTION:
+		'Armor Class represents how difficult it is to land a successful hit on a creature.',
+	HEALTH_DESCRIPTION:
+		'Health represents the amount of damage a creature can take before falling unconscious.',
+	INITIATIVE_DESCRIPTION:
+		'Initiative determines the order of turns in combat.',
+};

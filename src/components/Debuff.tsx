@@ -13,7 +13,15 @@ export default function Debuff({
 	...props
 }: { debuff: DebuffObj } & ComponentPropsWithoutRef<typeof Badge>) {
 	const badge = (
-		<Badge className={cn(className, debuff.color)} {...props}>
+		<Badge
+			className={cn(
+				'border-white',
+				{ 'border-dashed': debuff.duration === 1 },
+				debuff.color,
+				className,
+			)}
+			{...props}
+		>
 			{debuff.name}
 			{debuff.duration !== undefined ? ` (${debuff.duration})` : ''}
 		</Badge>
