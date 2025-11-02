@@ -1,21 +1,26 @@
 import type {BaseEvent} from './BaseEvent';
 import {mergeSorted} from './mergeSorted';
 
-export class EventSource<E extends BaseEvent, State> {
-	private static readonly SNAPSHOT_INTERVAL = 100;
+export class EventSource<Event extends BaseEvent, State> {
+	private readonly snapshotInterval: number;
 
-	protected events: E[] = [];
+	protected events: Event[] = [];
 	protected subscribers: ((state: State) => void)[] = [];
 	protected state: State;
 
-	// Snapshot of state just after eventIndex
+	// Snapshot of state just before eventIndex
 	protected snapshots: {state: State; eventIndex: number;}[] = [];
 
 	constructor(
 		private initialState: Readonly<State>,
-		protected readonly applyEvent: (state: Readonly<State>, event: E) => State,
+		protected readonly applyEvent: (state: Readonly<State>, event: Event) => State,
+		{snapshotInterval = 100} = {}
 	) {
+		if (snapshotInterval <= 0) {
+			throw new Error('snapshotInterval must be a positive integer');
+		}
 		this.state = initialState;
+		this.snapshotInterval = snapshotInterval;
 	}
 
 	getState(): Readonly<State> {
@@ -39,14 +44,14 @@ export class EventSource<E extends BaseEvent, State> {
 		}
 	}
 
-	protected dispatch(event: E): void {
+	protected dispatch(event: Event): void {
 		this.events.push(event);
 		this.state = this.applyEvent(this.state, event);
 		this.notify();
 
 		const latestSnapshot = this.getLatestSnapshot();
 
-		if (this.events.length - latestSnapshot.eventIndex - 1 >= EventSource.SNAPSHOT_INTERVAL) {
+		if (this.events.length - latestSnapshot.eventIndex >= this.snapshotInterval) {
 			this.createSnapshot();
 		}
 	}
@@ -57,7 +62,7 @@ export class EventSource<E extends BaseEvent, State> {
 		}
 	}
 
-	replay(events: E[]): void {
+	replay(events: Event[]): void {
 		for (const event of events) {
 			this.state = this.applyEvent(this.state, event);
 		}
@@ -70,7 +75,7 @@ export class EventSource<E extends BaseEvent, State> {
 	}
 
 	protected createSnapshot(): () => void {
-		const snapshot = {state: this.state, eventIndex: this.events.length - 1}
+		const snapshot = {state: this.state, eventIndex: this.events.length}
 		this.snapshots.push(snapshot);
 
 		return () => {
@@ -79,25 +84,26 @@ export class EventSource<E extends BaseEvent, State> {
 		}
 	}
 
-	protected removeEvent(event: E): void {
+	protected removeEvent(event: Event): void {
 		const index = this.events.findIndex(e => e.id === event.id);
 		if (index === -1) return;
 
-		while (this.getLatestSnapshot().eventIndex >= index) {
+		while (this.getLatestSnapshot().eventIndex > index) {
 			this.dropLatestSnapshot();
 		}
 
 		const snapshot = this.getLatestSnapshot();
 
-		const eventsToReplay = this.events.splice(snapshot.eventIndex + 1).filter(e => e.id !== event.id);
+		const eventsToReplay = this.events.splice(snapshot.eventIndex).filter(e => e.id !== event.id);
 
 		this.state = snapshot.state;
+		this.events.push(...eventsToReplay);
 		this.replay(eventsToReplay);
 	}
 
 	protected getLatestSnapshot(): {state: State; eventIndex: number;} {
 		if (this.snapshots.length === 0) {
-			return {state: this.initialState, eventIndex: -1};
+			return {state: this.initialState, eventIndex: 0};
 		}
 		return this.snapshots[this.snapshots.length - 1];
 	}
@@ -107,15 +113,15 @@ export class EventSource<E extends BaseEvent, State> {
 		this.snapshots.pop();
 	}
 
-	private rollbackToSnapshotSilent(): E[] {
+	private rollbackToSnapshotSilent(): Event[] {
 		const snapshot = this.getLatestSnapshot();
 		this.state = snapshot.state;
-		const removedEvents = this.events.splice(snapshot.eventIndex + 1);
+		const removedEvents = this.events.splice(snapshot.eventIndex);
 
 		return removedEvents;
 	}
 
-	protected insertEvents(events: E[]): void {
+	protected insertEvents(events: Event[]): void {
 		if (events.length === 0) return;
 
 		const firstNewEventTimestamp = events[0]!.timestamp;
@@ -125,7 +131,7 @@ export class EventSource<E extends BaseEvent, State> {
 		this.dropSnapshotsAfterEventIndex(insertIndex);
 
 		const existingEvents = this.rollbackToSnapshotSilent();
-		const newEvents: E[] = mergeSorted(
+		const newEvents: Event[] = mergeSorted(
 			existingEvents,
 			events,
 			(a, b) =>
@@ -134,11 +140,12 @@ export class EventSource<E extends BaseEvent, State> {
 					: a.id.localeCompare(b.id)
 		);
 
+		this.events.push(...newEvents);
 		this.replay(newEvents);
 	}
 
 	private dropSnapshotsAfterEventIndex(eventIndex: number): void {
-		while (this.getLatestSnapshot().eventIndex >= eventIndex) {
+		while (this.getLatestSnapshot().eventIndex > eventIndex) {
 			this.dropLatestSnapshot();
 		}
 	}
