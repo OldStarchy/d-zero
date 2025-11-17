@@ -11,11 +11,16 @@ import Sandbox from '@/views/Sandbox';
 import EntityPropertyPanel from '@/views/sandbox/forms/EntityPropertyPanel';
 
 import CustomCreatureEditor from './views/CustomCreatureEditor';
+import Components from './views/sandbox/Components';
 
 export const sandboxRoutes: RouteObject[] = [
 	{
 		index: true,
 		Component: Sandbox,
+	},
+	{
+		path: '/sandbox/components',
+		Component: Components,
 	},
 	{
 		path: '/sandbox/forms/entity-property-panel',
