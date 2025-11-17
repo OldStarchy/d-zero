@@ -12,6 +12,7 @@ import EntityPropertyPanel from '@/views/sandbox/forms/EntityPropertyPanel';
 
 import CustomCreatureEditor from './views/CustomCreatureEditor';
 import Components from './views/sandbox/Components';
+import EncounterPanel from './views/sandbox/panels/Encounter';
 
 export const sandboxRoutes: RouteObject[] = [
 	{
@@ -25,6 +26,10 @@ export const sandboxRoutes: RouteObject[] = [
 	{
 		path: '/sandbox/forms/entity-property-panel',
 		Component: EntityPropertyPanel,
+	},
+	{
+		path: '/sandbox/panels/encounter',
+		Component: EncounterPanel,
 	},
 ];
 

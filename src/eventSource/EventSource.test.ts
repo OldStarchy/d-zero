@@ -39,11 +39,17 @@ interface CounterState {
 
 // Test implementation
 class TestEventSource extends EventSource<TestEvent, CounterState> {
-	constructor(initialState: CounterState = { count: 0 }, options?: { snapshotInterval?: number }) {
+	constructor(
+		initialState: CounterState = { count: 0 },
+		options?: { snapshotInterval?: number },
+	) {
 		super(initialState, TestEventSource.applyEvent, options);
 	}
 
-	static applyEvent(state: Readonly<CounterState>, event: TestEvent): CounterState {
+	static applyEvent(
+		state: Readonly<CounterState>,
+		event: TestEvent,
+	): CounterState {
 		switch (event.type) {
 			case 'ADD':
 				return {
@@ -72,7 +78,7 @@ class TestEventSource extends EventSource<TestEvent, CounterState> {
 
 	// Expose protected methods for testing
 	public dispatchEvent(event: TestEvent): void {
-		this.dispatch(event);
+		this.dispatchEvent(event);
 	}
 
 	public insertEventsPublic(events: TestEvent[]): void {
@@ -95,7 +101,7 @@ class TestEventSource extends EventSource<TestEvent, CounterState> {
 		return [...this.events];
 	}
 
-	public getSnapshots(): Array<{state: CounterState; eventIndex: number}> {
+	public getSnapshots(): Array<{ state: CounterState; eventIndex: number }> {
 		return [...this.snapshots];
 	}
 
@@ -103,11 +109,12 @@ class TestEventSource extends EventSource<TestEvent, CounterState> {
 		return this.generateEventId();
 	}
 
-	public getLatestSnapshotPublic(): {state: CounterState; eventIndex: number} {
+	public getLatestSnapshotPublic(): {
+		state: CounterState;
+		eventIndex: number;
+	} {
 		return this.getLatestSnapshot();
 	}
-
-
 }
 
 describe('EventSource', () => {
@@ -118,7 +125,7 @@ describe('EventSource', () => {
 		type: TestEvent['type'],
 		payload?: TestEvent['payload'],
 		timestamp = Date.now(),
-		id = Math.random().toString(36).substring(2)
+		id = Math.random().toString(36).substring(2),
 	): TestEvent => ({
 		id,
 		type,
@@ -261,7 +268,9 @@ describe('EventSource', () => {
 			const errorSubscriber = vi.fn().mockImplementation(() => {
 				throw new Error('Subscriber error');
 			});
-			const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+			const consoleSpy = vi
+				.spyOn(console, 'error')
+				.mockImplementation(() => {});
 
 			eventSource.subscribe(errorSubscriber);
 			eventSource.subscribe(mockSubscriber);
@@ -273,7 +282,10 @@ describe('EventSource', () => {
 
 			expect(errorSubscriber).toHaveBeenCalled();
 			expect(mockSubscriber).toHaveBeenCalled();
-			expect(consoleSpy).toHaveBeenCalledWith('Error in subscriber callback:', expect.any(Error));
+			expect(consoleSpy).toHaveBeenCalledWith(
+				'Error in subscriber callback:',
+				expect.any(Error),
+			);
 
 			consoleSpy.mockRestore();
 		});
@@ -321,20 +333,32 @@ describe('EventSource', () => {
 		});
 
 		it('should use custom snapshotInterval when provided', () => {
-			const customEventSource = new TestEventSource({ count: 0 }, { snapshotInterval: 5 });
+			const customEventSource = new TestEventSource(
+				{ count: 0 },
+				{ snapshotInterval: 5 },
+			);
 
 			// Dispatch 5 events - should create snapshot after 5 events
 			for (let i = 0; i < 5; i++) {
-				customEventSource.dispatchEvent(createEvent('ADD', { value: 1 }));
+				customEventSource.dispatchEvent(
+					createEvent('ADD', { value: 1 }),
+				);
 			}
 
 			// After 5 events, snapshot should be created
 			expect(customEventSource.getSnapshots()).toHaveLength(1);
 			expect(customEventSource.getSnapshots()[0]?.state.count).toBe(5);
 			expect(customEventSource.getSnapshots()[0]?.eventIndex).toBe(5);
-		});		it('should throw error for invalid snapshotInterval', () => {
-			expect(() => new TestEventSource({ count: 0 }, { snapshotInterval: 0 })).toThrow('snapshotInterval must be a positive integer');
-			expect(() => new TestEventSource({ count: 0 }, { snapshotInterval: -1 })).toThrow('snapshotInterval must be a positive integer');
+		});
+		it('should throw error for invalid snapshotInterval', () => {
+			expect(
+				() =>
+					new TestEventSource({ count: 0 }, { snapshotInterval: 0 }),
+			).toThrow('snapshotInterval must be a positive integer');
+			expect(
+				() =>
+					new TestEventSource({ count: 0 }, { snapshotInterval: -1 }),
+			).toThrow('snapshotInterval must be a positive integer');
 		});
 
 		it('should create manual snapshots', () => {
@@ -376,8 +400,12 @@ describe('EventSource', () => {
 			const baseTime = Date.now();
 
 			// Insert events out of order
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, baseTime + 200));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, baseTime + 400));
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, baseTime + 200),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, baseTime + 400),
+			);
 
 			// Insert earlier events
 			const earlierEvents = [
@@ -392,7 +420,7 @@ describe('EventSource', () => {
 
 			// Events should be in chronological order
 			const events = eventSource.getEvents();
-			expect(events.map(e => e.timestamp)).toEqual([
+			expect(events.map((e) => e.timestamp)).toEqual([
 				baseTime + 100,
 				baseTime + 200,
 				baseTime + 300,
@@ -403,8 +431,12 @@ describe('EventSource', () => {
 		it('should handle events with same timestamp using ID for ordering', () => {
 			const timestamp = Date.now();
 
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, timestamp, 'b'));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, timestamp, 'd'));
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, timestamp, 'b'),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, timestamp, 'd'),
+			);
 
 			const newEvents = [
 				createEvent('ADD', { value: 10 }, timestamp, 'a'),
@@ -414,7 +446,7 @@ describe('EventSource', () => {
 			eventSource.insertEventsPublic(newEvents);
 
 			const events = eventSource.getEvents();
-			expect(events.map(e => e.id)).toEqual(['a', 'b', 'c', 'd']);
+			expect(events.map((e) => e.id)).toEqual(['a', 'b', 'c', 'd']);
 		});
 
 		it('should handle empty event insertion', () => {
@@ -430,9 +462,24 @@ describe('EventSource', () => {
 	describe('Event Removal', () => {
 		it('should remove events and replay from snapshot', () => {
 			// Create some events
-			const event1 = createEvent('ADD', { value: 5 }, Date.now() + 100, 'event1');
-			const event2 = createEvent('ADD', { value: 3 }, Date.now() + 200, 'event2');
-			const event3 = createEvent('ADD', { value: 2 }, Date.now() + 300, 'event3');
+			const event1 = createEvent(
+				'ADD',
+				{ value: 5 },
+				Date.now() + 100,
+				'event1',
+			);
+			const event2 = createEvent(
+				'ADD',
+				{ value: 3 },
+				Date.now() + 200,
+				'event2',
+			);
+			const event3 = createEvent(
+				'ADD',
+				{ value: 2 },
+				Date.now() + 300,
+				'event3',
+			);
 
 			eventSource.dispatchEvent(event1);
 			eventSource.createSnapshotPublic(); // Snapshot after event1
@@ -446,7 +493,9 @@ describe('EventSource', () => {
 
 			expect(eventSource.getState().count).toBe(7); // 5 + 2 (event1 + event3)
 			expect(eventSource.getEvents()).toHaveLength(2);
-			expect(eventSource.getEvents().find(e => e.id === 'event2')).toBeUndefined();
+			expect(
+				eventSource.getEvents().find((e) => e.id === 'event2'),
+			).toBeUndefined();
 		});
 
 		it('should handle removal of non-existent event', () => {
@@ -454,7 +503,12 @@ describe('EventSource', () => {
 			const stateBefore = eventSource.getState();
 			const eventsBefore = eventSource.getEvents();
 
-			const nonExistentEvent = createEvent('ADD', { value: 1 }, Date.now(), 'non-existent');
+			const nonExistentEvent = createEvent(
+				'ADD',
+				{ value: 1 },
+				Date.now(),
+				'non-existent',
+			);
 			eventSource.removeEventPublic(nonExistentEvent);
 
 			expect(eventSource.getState()).toEqual(stateBefore);
@@ -490,12 +544,18 @@ describe('EventSource', () => {
 	describe('Error Handling', () => {
 		it('should handle errors in applyEvent function gracefully', () => {
 			// Create an event source with a faulty applyEvent function
-			class FaultyEventSource extends EventSource<TestEvent, CounterState> {
+			class FaultyEventSource extends EventSource<
+				TestEvent,
+				CounterState
+			> {
 				constructor() {
 					super({ count: 0 }, FaultyEventSource.faultyApplyEvent);
 				}
 
-				static faultyApplyEvent(state: Readonly<CounterState>, event: TestEvent): CounterState {
+				static faultyApplyEvent(
+					state: Readonly<CounterState>,
+					event: TestEvent,
+				): CounterState {
 					if (event.type === 'SUBTRACT') {
 						throw new Error('Faulty apply event');
 					}
@@ -503,17 +563,23 @@ describe('EventSource', () => {
 				}
 
 				public dispatchEvent(event: TestEvent): void {
-					this.dispatch(event);
+					this.dispatchEvent(event);
 				}
 			}
 
 			const faultySource = new FaultyEventSource();
 
 			// Should work fine for ADD
-			expect(() => faultySource.dispatchEvent(createEvent('ADD', { value: 1 }))).not.toThrow();
+			expect(() =>
+				faultySource.dispatchEvent(createEvent('ADD', { value: 1 })),
+			).not.toThrow();
 
 			// Should throw for SUBTRACT
-			expect(() => faultySource.dispatchEvent(createEvent('SUBTRACT', { value: 1 }))).toThrow('Faulty apply event');
+			expect(() =>
+				faultySource.dispatchEvent(
+					createEvent('SUBTRACT', { value: 1 }),
+				),
+			).toThrow('Faulty apply event');
 		});
 	});
 
@@ -565,7 +631,9 @@ describe('EventSource', () => {
 			subscriber.mockClear();
 
 			// This should not throw even though subscriber unsubscribes during notification
-			expect(() => eventSource.dispatchEvent(createEvent('ADD', { value: 1 }))).not.toThrow();
+			expect(() =>
+				eventSource.dispatchEvent(createEvent('ADD', { value: 1 })),
+			).not.toThrow();
 		});
 
 		it('should handle multiple unsubscribe calls safely', () => {
@@ -582,8 +650,12 @@ describe('EventSource', () => {
 			const laterTime = Date.now() + 1000;
 
 			// Add some events with later timestamps
-			eventSource.dispatchEvent(createEvent('ADD', { value: 5 }, laterTime));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 3 }, laterTime + 100));
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 5 }, laterTime),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 3 }, laterTime + 100),
+			);
 
 			expect(eventSource.getState().count).toBe(8);
 
@@ -602,8 +674,12 @@ describe('EventSource', () => {
 		it('should handle inserting events in the middle of timeline', () => {
 			const baseTime = Date.now();
 
-			eventSource.dispatchEvent(createEvent('ADD', { value: 10 }, baseTime));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 10 }, baseTime + 300));
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 10 }, baseTime),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 10 }, baseTime + 300),
+			);
 
 			expect(eventSource.getState().count).toBe(20);
 
@@ -621,14 +697,26 @@ describe('EventSource', () => {
 		it('should handle snapshot cleanup during event removal', () => {
 			// Create multiple snapshots
 			for (let i = 0; i < 250; i++) {
-				eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, Date.now() + i, `event${i}`));
+				eventSource.dispatchEvent(
+					createEvent(
+						'ADD',
+						{ value: 1 },
+						Date.now() + i,
+						`event${i}`,
+					),
+				);
 			}
 
 			const snapshotsBefore = eventSource.getSnapshots().length;
 			expect(snapshotsBefore).toBeGreaterThan(1);
 
 			// Remove an early event - should drop some snapshots
-			const eventToRemove = createEvent('ADD', { value: 1 }, Date.now() + 50, 'event50');
+			const eventToRemove = createEvent(
+				'ADD',
+				{ value: 1 },
+				Date.now() + 50,
+				'event50',
+			);
 			eventSource.removeEventPublic(eventToRemove);
 
 			// Some snapshots should have been dropped
@@ -637,8 +725,18 @@ describe('EventSource', () => {
 		});
 
 		it('should handle event removal when no snapshots exist', () => {
-			const event1 = createEvent('ADD', { value: 5 }, Date.now(), 'event1');
-			const event2 = createEvent('ADD', { value: 3 }, Date.now() + 100, 'event2');
+			const event1 = createEvent(
+				'ADD',
+				{ value: 5 },
+				Date.now(),
+				'event1',
+			);
+			const event2 = createEvent(
+				'ADD',
+				{ value: 3 },
+				Date.now() + 100,
+				'event2',
+			);
 
 			eventSource.dispatchEvent(event1);
 			eventSource.dispatchEvent(event2);
@@ -657,9 +755,15 @@ describe('EventSource', () => {
 			const baseTime = Date.now();
 
 			// Add initial events
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, baseTime + 200, 'b'));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, baseTime + 400, 'd'));
-			eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, baseTime + 600, 'f'));
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, baseTime + 200, 'b'),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, baseTime + 400, 'd'),
+			);
+			eventSource.dispatchEvent(
+				createEvent('ADD', { value: 1 }, baseTime + 600, 'f'),
+			);
 
 			// Insert interleaved events
 			eventSource.insertEventsPublic([
@@ -669,11 +773,13 @@ describe('EventSource', () => {
 			]);
 
 			// Remove one event
-			eventSource.removeEventPublic(createEvent('ADD', { value: 1 }, baseTime + 300, 'c'));
+			eventSource.removeEventPublic(
+				createEvent('ADD', { value: 1 }, baseTime + 300, 'c'),
+			);
 
 			const events = eventSource.getEvents();
-			expect(events.map(e => e.id)).toEqual(['a', 'b', 'd', 'e', 'f']);
-			expect(events.map(e => e.timestamp)).toEqual([
+			expect(events.map((e) => e.id)).toEqual(['a', 'b', 'd', 'e', 'f']);
+			expect(events.map((e) => e.timestamp)).toEqual([
 				baseTime + 100,
 				baseTime + 200,
 				baseTime + 400,
@@ -693,7 +799,14 @@ describe('EventSource', () => {
 		it('should handle insertion at the exact beginning with snapshots', () => {
 			// Create events and snapshots
 			for (let i = 0; i < 150; i++) {
-				eventSource.dispatchEvent(createEvent('ADD', { value: 1 }, Date.now() + 1000 + i, `later${i}`));
+				eventSource.dispatchEvent(
+					createEvent(
+						'ADD',
+						{ value: 1 },
+						Date.now() + 1000 + i,
+						`later${i}`,
+					),
+				);
 			}
 
 			expect(eventSource.getSnapshots().length).toBeGreaterThan(0);
@@ -701,7 +814,12 @@ describe('EventSource', () => {
 			// Insert events at the very beginning (before all existing events)
 			const veryEarlyEvents = [
 				createEvent('ADD', { value: 100 }, Date.now(), 'early1'),
-				createEvent('MULTIPLY', { value: 2 }, Date.now() + 10, 'early2'),
+				createEvent(
+					'MULTIPLY',
+					{ value: 2 },
+					Date.now() + 10,
+					'early2',
+				),
 			];
 
 			eventSource.insertEventsPublic(veryEarlyEvents);

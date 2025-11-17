@@ -1,9 +1,12 @@
-import type {BaseEvent} from './BaseEvent';
-import type {EventMessage} from './EventMessage';
-import {EventSource} from './EventSource';
-import type {ReconnectingPort} from './ReconnectingPort';
+import type { BaseEvent } from './BaseEvent';
+import type { EventMessage } from './EventMessage';
+import { EventSource } from './EventSource';
+import type { ReconnectingPort } from './ReconnectingPort';
 
-class ClientEventSource<E extends BaseEvent, State> extends EventSource<E, State> {
+class ClientEventSource<E extends BaseEvent, State> extends EventSource<
+	E,
+	State
+> {
 	private static readonly PROPOSED_EVENT_RETRY_TIMEOUT = 5000; // 5 seconds
 
 	private pending: Map<string, E> = new Map();
@@ -11,7 +14,7 @@ class ClientEventSource<E extends BaseEvent, State> extends EventSource<E, State
 	constructor(
 		initialState: State,
 		applyEvent: (state: State, event: E) => State,
-		private port: ReconnectingPort<EventMessage<E>>
+		private port: ReconnectingPort<EventMessage<E>>,
 	) {
 		super(initialState, applyEvent);
 
@@ -32,7 +35,8 @@ class ClientEventSource<E extends BaseEvent, State> extends EventSource<E, State
 				this.sendToHost(event);
 			}
 
-			const latestTimestamp = this.events[this.events.length - 1]?.timestamp || 0;
+			const latestTimestamp =
+				this.events[this.events.length - 1]?.timestamp || 0;
 			this.requestEventHistory(latestTimestamp);
 		});
 	}
@@ -45,7 +49,7 @@ class ClientEventSource<E extends BaseEvent, State> extends EventSource<E, State
 		} as E;
 
 		this.pending.set(proposedEvent.id, proposedEvent);
-		this.dispatch(proposedEvent);
+		this.dispatchEvent(proposedEvent);
 
 		this.sendToHost(proposedEvent);
 
@@ -62,7 +66,7 @@ class ClientEventSource<E extends BaseEvent, State> extends EventSource<E, State
 
 	protected receiveFromHost(event: E): void {
 		this.pending.delete(event.id);
-		this.dispatch(event);
+		this.dispatchEvent(event);
 	}
 
 	protected rejectPendingEvent(eventId: string): void {

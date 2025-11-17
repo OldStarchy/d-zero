@@ -2,20 +2,9 @@ import z from 'zod';
 
 import { defineRecordType, type RecordType } from '@/db/RecordType';
 import EncounterApi from '@/type/EncounterApi';
+import {encounterSchema, type Encounter} from '@/model/encounter/Encounter';
 
-declare const EncounterIdBrand: unique symbol;
-export type EncounterIdBrand = typeof EncounterIdBrand;
 
-export const encounterSchema = z.object({
-	id: z.string().brand<EncounterIdBrand>(),
-	revision: z.number(),
-	name: z.string().optional(),
-	description: z.string().optional(),
-	backgroundImage: z.string().optional(),
-	currentTurn: z.string().nullable(),
-});
-
-export type Encounter = z.infer<typeof encounterSchema>;
 type EncounterFilter = { id?: string; name?: string };
 export type EncounterRecordType = RecordType<Encounter, EncounterFilter>;
 
